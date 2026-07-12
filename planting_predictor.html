@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ตัวพยากรณ์วันปลูก — ข้าวไวแสง</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6b8e23">
+<style>
+  :root {
+    --paddy: #6b8e23;
+    --paddy-dark: #4a6318;
+    --sun: #e8a13a;
+    --sun-deep: #c97f1e;
+    --sky: #5a8fb5;
+    --cream: #f7f3e8;
+    --card: #fffdf7;
+    --line: #ddd4bf;
+    --ink: #2a2620;
+    --ink-soft: #6b6355;
+    --alert: #c15a3a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', 'Sarabun', system-ui, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    line-height: 1.6;
+    padding: 1.5rem;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  header {
+    text-align: center;
+    padding: 1.5rem 0 2rem;
+    border-bottom: 2px solid var(--line);
+    margin-bottom: 2rem;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, var(--sky), #3d6d8f);
+    margin-bottom: 0.75rem;
+    font-size: 26px;
+  }
+  h1 { font-size: 1.4rem; color: var(--paddy-dark); font-weight: 700; }
+  .sub { font-size: 0.9rem; color: var(--ink-soft); margin-top: 0.35rem; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .card h2 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--paddy);
+    margin-bottom: 1rem;
+    font-weight: 700;
+  }
+  label { display: block; font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 0.35rem; font-weight: 600; }
+  .hint { font-size: 0.75rem; color: var(--ink-soft); font-weight: 400; margin-top: 0.25rem; }
+  input {
+    width: 100%;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    font-size: 1rem;
+    background: #fff;
+    color: var(--ink);
+    font-family: inherit;
+  }
+  input:focus { outline: none; border-color: var(--paddy); box-shadow: 0 0 0 3px rgba(107,142,35,0.15); }
+  .field { margin-bottom: 1.1rem; }
+  button {
+    width: 100%;
+    padding: 0.85rem;
+    background: var(--paddy);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  button:hover { background: var(--paddy-dark); }
+  .gps-btn {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.6rem;
+    background: #fff;
+    color: var(--sky);
+    border: 1px solid var(--sky);
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .gps-btn:hover { background: var(--sky); color: #fff; }
+  .gps-btn:disabled { opacity: 0.6; cursor: wait; }
+  .result { display: none; }
+  .result.show { display: block; }
+  .deadline {
+    text-align: center;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(193,90,58,0.12), rgba(232,161,58,0.12));
+    border-radius: 12px;
+    margin-bottom: 1.25rem;
+    border: 1px solid rgba(193,90,58,0.25);
+  }
+  .deadline .label { font-size: 0.85rem; color: var(--alert); font-weight: 700; }
+  .deadline .big { font-size: 2rem; font-weight: 800; color: var(--alert); line-height: 1.15; margin: 0.3rem 0; }
+  .deadline .note { font-size: 0.8rem; color: var(--ink-soft); }
+  .timeline { list-style: none; }
+  .tl {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 0.85rem 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .tl:last-child { border-bottom: none; }
+  .tl .dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    margin-top: 0.4rem; flex-shrink: 0;
+  }
+  .tl .body { flex: 1; }
+  .tl .t { font-size: 0.95rem; font-weight: 700; }
+  .tl .d { font-size: 0.8rem; color: var(--ink-soft); }
+  .tl .date { font-size: 1rem; font-weight: 700; color: var(--paddy-dark); font-variant-numeric: tabular-nums; }
+  .warn {
+    background: rgba(193,90,58,0.08);
+    border-left: 3px solid var(--alert);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    margin-top: 1rem;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="badge">🌾</div>
+    <h1>ตัวพยากรณ์วันปลูกสุดท้าย</h1>
+    <p class="sub">ใส่พิกัด + ค่าช่วงแสงวิกฤตประจำพันธุ์ → คำนวณย้อนกลับหาเส้นตายวันปลูก</p>
+  </header>
+
+  <div class="card">
+    <h2>ข้อมูลนำเข้า</h2>
+    <div class="field">
+      <label for="lat">ละติจูดแปลงนา φ (องศาเหนือ +)</label>
+      <input type="number" id="lat" value="16.43" step="0.01">
+      <button type="button" class="gps-btn" onclick="fetchGPS()">📍 ดึงพิกัดจาก GPS ตำแหน่งปัจจุบัน</button>
+      <p class="hint" id="gps-status">ดูจาก Google Maps (กดค้างที่จุด) หรือกดปุ่มดึง GPS เมื่ออยู่ที่แปลงจริง</p>
+    </div>
+    <div class="field">
+      <label for="dl">ค่าช่วงแสงวิกฤตประจำพันธุ์ (ชั่วโมง)</label>
+      <input type="number" id="dl" value="11.85" step="0.01">
+      <p class="hint">ค่าที่ค้นพบจากการทดลอง (จากเว็บคำนวณโหมด A เฉลี่ย 3 ชุด)</p>
+    </div>
+    <div class="field">
+      <label for="age">อายุขั้นต่ำทางลำต้น-ใบ ก่อนพร้อมออกดอก (วัน)</label>
+      <input type="number" id="age" value="45" step="1">
+      <p class="hint">คุณสมบัติของพันธุ์ข้าว — ค่าเริ่มต้น 45 วัน (ปรับได้ตามพันธุ์)</p>
+    </div>
+    <div class="field">
+      <label for="year">ปีที่จะปลูก (ค.ศ.)</label>
+      <input type="number" id="year" value="2026" step="1">
+    </div>
+    <button onclick="predict()">คำนวณเส้นตายวันปลูก</button>
+  </div>
+
+  <div class="card result" id="result">
+    <h2>ผลการพยากรณ์</h2>
+    <div class="deadline">
+      <div class="label">⚠ เส้นตายวันปลูกสุดท้าย</div>
+      <div class="big" id="last-plant">—</div>
+      <div class="note">ปลูกหลังวันนี้ เสี่ยงต้นข้าวโตไม่ทัน → รวงลีบ</div>
+    </div>
+    <ul class="timeline">
+      <li class="tl">
+        <div class="dot" style="background: var(--paddy);"></div>
+        <div class="body">
+          <div class="t">วันปลูกสุดท้าย</div>
+          <div class="d">หลังวันนี้ต้นจะโตไม่ทันก่อนทริกเกอร์</div>
+        </div>
+        <div class="date" id="tl-plant">—</div>
+      </li>
+      <li class="tl">
+        <div class="dot" style="background: var(--sun);"></div>
+        <div class="body">
+          <div class="t">วันทริกเกอร์แสงวิกฤต</div>
+          <div class="d">วันที่ความยาววัน = ค่าประจำพันธุ์พอดี (ขาลง)</div>
+        </div>
+        <div class="date" id="tl-trigger">—</div>
+      </li>
+      <li class="tl">
+        <div class="dot" style="background: var(--sky);"></div>
+        <div class="body">
+          <div class="t">วันเก็บเกี่ยวโดยประมาณ</div>
+          <div class="d">ทริกเกอร์ + 35 วัน (ระยะพัฒนารวง)</div>
+        </div>
+        <div class="date" id="tl-harvest">—</div>
+      </li>
+    </ul>
+    <div class="warn" id="warn"></div>
+  </div>
+</div>
+
+<script>
+  const SUN_ALT_AT_SET = -0.833; // องศา: ชดเชยการหักเหแสง (0.56°) + รัศมีดวงอาทิตย์ = ค่ามาตรฐานสากล
+  function toRad(d){ return d*Math.PI/180; }
+  function toDeg(r){ return r*180/Math.PI; }
+  function solarDeclination(N){ return 23.45*Math.sin(toRad((360/365)*(284+N))); }
+  function daylength(N, phi){
+    const delta = solarDeclination(N);
+    // สูตรเต็ม: หา H ณ มุมเงยดวงอาทิตย์ที่ตกจริง (รวมหักเหแสง)
+    const val = (Math.sin(toRad(SUN_ALT_AT_SET)) - Math.sin(toRad(phi))*Math.sin(toRad(delta)))
+                / (Math.cos(toRad(phi))*Math.cos(toRad(delta)));
+    if (val < -1 || val > 1) return null;
+    return 2*toDeg(Math.acos(val))/15;
+  }
+  function dateFromN(year, N){
+    const d = new Date(year, 0, 1);
+    d.setDate(d.getDate() + (N-1));
+    return d;
+  }
+  function fmtThai(d){
+    const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    return d.getDate() + ' ' + months[d.getMonth()] + ' ' + (d.getFullYear()+543);
+  }
+
+  function findTriggerDay(phi, targetDL){
+    // หาวันบน "ขาลง" (แสงกำลังสั้นลง) ที่ DL ตัดผ่านค่าเป้าหมาย
+    for (let N = 1; N <= 365; N++){
+      const dl = daylength(N, phi);
+      const dlNext = daylength(N < 365 ? N+1 : 365, phi);
+      if (dl === null || dlNext === null) continue;
+      if (dl >= targetDL && dlNext < targetDL) return N; // ขาลง
+    }
+    return null;
+  }
+
+  function fetchGPS(){
+    const status = document.getElementById('gps-status');
+    const btn = document.querySelector('.gps-btn');
+    if (!navigator.geolocation){
+      status.textContent = '⚠ อุปกรณ์นี้ไม่รองรับ GPS — กรุณากรอกละติจูดเอง';
+      return;
+    }
+    status.textContent = 'กำลังค้นหาตำแหน่ง... (กรุณาอนุญาตการเข้าถึงตำแหน่ง)';
+    btn.disabled = true;
+    navigator.geolocation.getCurrentPosition(
+      function(pos){
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        document.getElementById('lat').value = lat.toFixed(4);
+        status.textContent = '✓ ได้พิกัดแล้ว: ' + lat.toFixed(4) + '°N, ' + lon.toFixed(4) + '°E';
+        btn.disabled = false;
+        predict();
+      },
+      function(err){
+        const msgs = {
+          1: '⚠ ถูกปฏิเสธการเข้าถึงตำแหน่ง — กรุณาอนุญาตในเบราว์เซอร์ หรือกรอกละติจูดเอง',
+          2: '⚠ หาตำแหน่งไม่ได้ — ตรวจสอบว่าเปิด GPS อยู่ หรือกรอกละติจูดเอง',
+          3: '⚠ ใช้เวลานานเกินไป — ลองใหม่ หรือกรอกละติจูดเอง'
+        };
+        status.textContent = msgs[err.code] || '⚠ เกิดข้อผิดพลาด — กรุณากรอกละติจูดเอง';
+        btn.disabled = false;
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
+
+  function predict(){
+    const phi = parseFloat(document.getElementById('lat').value);
+    const targetDL = parseFloat(document.getElementById('dl').value);
+    const age = parseInt(document.getElementById('age').value);
+    const year = parseInt(document.getElementById('year').value);
+
+    if (isNaN(phi) || isNaN(targetDL) || isNaN(age) || isNaN(year)){
+      alert('กรุณากรอกข้อมูลให้ครบทุกช่อง'); return;
+    }
+
+    const N = findTriggerDay(phi, targetDL);
+    const warnEl = document.getElementById('warn');
+
+    if (N === null){
+      alert('ไม่พบวันที่ความยาววันตรงกับค่าเป้าหมายที่ละติจูดนี้ — อาจเป็นเพราะพิกัดใกล้เส้นศูนย์สูตร/ขั้วโลก หรือค่า DL เป้าหมายอยู่นอกช่วงที่เป็นไปได้');
+      return;
+    }
+
+    const triggerDate = dateFromN(year, N);
+    const lastPlant = new Date(triggerDate); lastPlant.setDate(lastPlant.getDate() - age);
+    const harvest = new Date(triggerDate); harvest.setDate(harvest.getDate() + 35);
+
+    document.getElementById('last-plant').textContent = fmtThai(lastPlant);
+    document.getElementById('tl-plant').textContent = fmtThai(lastPlant);
+    document.getElementById('tl-trigger').textContent = fmtThai(triggerDate);
+    document.getElementById('tl-harvest').textContent = fmtThai(harvest);
+
+    warnEl.textContent = 'หมายเหตุ: อายุขั้นต่ำ ' + age + ' วัน เป็นค่าประมาณ ควรยืนยันกับข้อมูลพันธุ์จริง / ผลนี้รวมการชดเชยการหักเหของแสงในชั้นบรรยากาศแล้ว (−0.833°)';
+
+    document.getElementById('result').classList.add('show');
+  }
+
+  predict();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('service-worker.js').catch(function(e) {
+        console.log('SW registration failed:', e);
+      });
+    });
+  }
+</script>
+</body>
+</html>

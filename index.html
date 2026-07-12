@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ข้าวไวแสง — เครื่องมือคำนวณและพยากรณ์</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6b8e23">
+<style>
+  :root {
+    --paddy: #6b8e23;
+    --paddy-dark: #4a6318;
+    --sun: #e8a13a;
+    --sun-deep: #c97f1e;
+    --sky: #5a8fb5;
+    --cream: #f7f3e8;
+    --card: #fffdf7;
+    --line: #ddd4bf;
+    --ink: #2a2620;
+    --ink-soft: #6b6355;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', 'Sarabun', system-ui, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    line-height: 1.6;
+    padding: 1.5rem;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  header {
+    text-align: center;
+    padding: 2rem 0 2.5rem;
+    border-bottom: 2px solid var(--line);
+    margin-bottom: 2rem;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, var(--paddy), var(--paddy-dark));
+    margin-bottom: 0.9rem;
+    font-size: 30px;
+  }
+  h1 { font-size: 1.5rem; color: var(--paddy-dark); font-weight: 700; }
+  .sub { font-size: 0.95rem; color: var(--ink-soft); margin-top: 0.4rem; }
+  .menu { display: grid; gap: 1.1rem; }
+  a.tool {
+    display: block;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 1.4rem 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+  }
+  a.tool:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(74, 99, 24, 0.14);
+    border-color: var(--paddy);
+  }
+  .tool-head { display: flex; align-items: center; gap: 0.85rem; margin-bottom: 0.5rem; }
+  .icon {
+    flex: 0 0 auto;
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+  .icon.calc { background: radial-gradient(circle at 40% 35%, var(--sun), var(--sun-deep)); }
+  .icon.predict { background: radial-gradient(circle at 40% 35%, var(--sky), #3d6d8f); }
+  .tool h2 { font-size: 1.1rem; color: var(--paddy-dark); font-weight: 700; }
+  .tool p { font-size: 0.9rem; color: var(--ink-soft); }
+  .arrow { margin-left: auto; color: var(--paddy); font-size: 1.2rem; }
+  footer {
+    text-align: center;
+    margin-top: 2.5rem;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="badge">🌾</div>
+      <h1>ข้าวนาปีไวแสง</h1>
+      <p class="sub">เครื่องมือคำนวณช่วงแสงวิกฤตและพยากรณ์วันปลูก</p>
+    </header>
+
+    <nav class="menu">
+      <a class="tool" href="photoperiod_calculator.html">
+        <div class="tool-head">
+          <span class="icon calc">☀️</span>
+          <h2>เครื่องคำนวณช่วงแสงวิกฤต</h2>
+          <span class="arrow">→</span>
+        </div>
+        <p>คำนวณความยาวช่วงแสงวิกฤตตามหลักดาราศาสตร์ทรงกลมฟ้า จากละติจูดและวันในรอบปี</p>
+      </a>
+
+      <a class="tool" href="planting_predictor.html">
+        <div class="tool-head">
+          <span class="icon predict">🌱</span>
+          <h2>ตัวพยากรณ์วันปลูก</h2>
+          <span class="arrow">→</span>
+        </div>
+        <p>พยากรณ์เส้นตายวันปลูกสุดท้าย เพื่อให้ข้าวไวแสงออกดอกและเก็บเกี่ยวได้ทันฤดู</p>
+      </a>
+    </nav>
+
+    <footer>
+      🌾 ติดตั้งเป็นแอปได้ผ่านเมนูของเบราว์เซอร์ (Add to Home Screen)
+    </footer>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('service-worker.js').catch(function(e) { console.log('SW failed:', e); });
+      });
+    }
+  </script>
+</body>
+</html>

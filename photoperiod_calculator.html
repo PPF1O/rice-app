@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>เครื่องคำนวณช่วงแสงวิกฤต — ข้าวไวแสง</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6b8e23">
+<style>
+  :root {
+    --paddy: #6b8e23; --paddy-dark: #4a6318; --sun: #e8a13a; --sun-deep: #c97f1e;
+    --cream: #f7f3e8; --card: #fffdf7; --line: #ddd4bf; --ink: #2a2620; --ink-soft: #6b6355;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI','Sarabun',system-ui,sans-serif; background: var(--cream); color: var(--ink); line-height: 1.6; padding: 1.5rem; }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  header { text-align: center; padding: 1.5rem 0 2rem; border-bottom: 2px solid var(--line); margin-bottom: 2rem; }
+  .sun-badge { display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, var(--sun), var(--sun-deep)); margin-bottom: 0.75rem; font-size: 28px; }
+  h1 { font-size: 1.4rem; color: var(--paddy-dark); font-weight: 700; }
+  .sub { font-size: 0.9rem; color: var(--ink-soft); margin-top: 0.35rem; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1.5rem; margin-bottom: 1.5rem; }
+  .card h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--paddy); margin-bottom: 1rem; font-weight: 700; }
+  label { display: block; font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 0.35rem; font-weight: 600; }
+  .hint { font-size: 0.75rem; color: var(--ink-soft); font-weight: 400; margin-top: 0.25rem; }
+  input { width: 100%; padding: 0.7rem 0.85rem; border: 1px solid var(--line); border-radius: 9px; font-size: 1rem; background: #fff; color: var(--ink); font-family: inherit; }
+  input:focus { outline: none; border-color: var(--paddy); box-shadow: 0 0 0 3px rgba(107,142,35,0.15); }
+  .field { margin-bottom: 1rem; }
+  .set-row { display: grid; grid-template-columns: auto 1fr; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; }
+  .set-label { font-size: 0.85rem; font-weight: 700; color: var(--paddy-dark); white-space: nowrap; }
+  button { width: 100%; padding: 0.85rem; background: var(--paddy); color: #fff; border: none; border-radius: 9px; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+  button:hover { background: var(--paddy-dark); }
+  .result { display: none; }
+  .result.show { display: block; }
+  .answer { text-align: center; padding: 1.5rem; background: linear-gradient(135deg, rgba(232,161,58,0.12), rgba(107,142,35,0.1)); border-radius: 12px; margin-bottom: 1.25rem; }
+  .answer .label { font-size: 0.85rem; color: var(--ink-soft); font-weight: 600; }
+  .answer .big { font-size: 2.5rem; font-weight: 800; color: var(--sun-deep); line-height: 1.1; margin: 0.25rem 0; }
+  .answer .hm { font-size: 1rem; color: var(--paddy-dark); font-weight: 600; }
+  .answer .tag { display: inline-block; margin-top: 0.5rem; font-size: 0.75rem; background: var(--paddy); color: #fff; padding: 0.2rem 0.7rem; border-radius: 20px; }
+  .set-result { border: 1px solid var(--line); border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 0.75rem; }
+  .set-result .head { font-size: 0.85rem; font-weight: 700; color: var(--paddy-dark); margin-bottom: 0.5rem; }
+  .steps { list-style: none; }
+  .step { display: flex; justify-content: space-between; align-items: baseline; padding: 0.4rem 0; font-size: 0.85rem; }
+  .step .name { color: var(--ink-soft); }
+  .step .val { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .foot { text-align: center; font-size: 0.78rem; color: var(--ink-soft); margin-top: 1rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="sun-badge">☀</div>
+    <h1>เครื่องคำนวณช่วงแสงวิกฤต</h1>
+    <p class="sub">กรอกวันออกดอกสะพรั่ง 80% (1–3 ชุด) → คำนวณ DL แต่ละชุด + เฉลี่ยเป็นค่าประจำพันธุ์</p>
+  </header>
+
+  <div class="card">
+    <h2>ข้อมูลนำเข้า</h2>
+    <div class="field">
+      <label>วันออกดอกสะพรั่ง 80% (Heading Date) — กรอกอย่างน้อย 1 ชุด</label>
+      <div class="set-row"><span class="set-label">ชุดที่ 1</span><input type="date" id="h1" value="2026-11-03"></div>
+      <div class="set-row"><span class="set-label">ชุดที่ 2</span><input type="date" id="h2" value="2026-11-04"></div>
+      <div class="set-row"><span class="set-label">ชุดที่ 3</span><input type="date" id="h3" value="2026-11-05"></div>
+      <p class="hint">เว็บจะลบ 35 วันให้อัตโนมัติ (ระยะพัฒนารวง) เพื่อหาวันรับแสงวิกฤต — เว้นว่างได้ถ้ามีน้อยกว่า 3 ชุด</p>
+    </div>
+    <div class="field">
+      <label for="days-back">ระยะนับถอยหลัง (วัน)</label>
+      <input type="number" id="days-back" value="35" step="1">
+      <p class="hint">ค่ามาตรฐาน 35 วัน (ระยะรวงอ่อนพัฒนาในกาบใบ) — ปรับได้ตามพันธุ์</p>
+    </div>
+    <div class="field">
+      <label for="lat">ละติจูด φ (องศาเหนือ +)</label>
+      <input type="number" id="lat" value="16.43" step="0.01">
+      <p class="hint">จาก Google Maps หรือ GPS มือถือ</p>
+    </div>
+    <button onclick="calculate()">คำนวณ DL และค่าเฉลี่ยประจำพันธุ์</button>
+  </div>
+
+  <div class="card result" id="result">
+    <h2>ผลการคำนวณ</h2>
+    <div class="answer">
+      <div class="label" id="ans-label">ค่าช่วงแสงวิกฤตประจำพันธุ์ (เฉลี่ย)</div>
+      <div class="big" id="dl-hours">—</div>
+      <div class="hm" id="dl-hm">—</div>
+      <div class="tag" id="ans-tag"></div>
+    </div>
+    <div id="set-results"></div>
+    <p class="foot">คำนวณรวมการชดเชยการหักเหของแสงในชั้นบรรยากาศแล้ว (ขอบฟ้าที่ −0.833°)</p>
+  </div>
+</div>
+
+<script>
+  const SUN_ALT_AT_SET = -0.833;
+  function toRad(d){ return d*Math.PI/180; }
+  function toDeg(r){ return r*180/Math.PI; }
+  function dayOfYear(d){ const s = new Date(d.getFullYear(),0,0); return Math.floor((d-s)/86400000); }
+  function solarDeclination(N){ return 23.45*Math.sin(toRad((360/365)*(284+N))); }
+  function sunsetHourAngle(phi, delta){
+    const val = (Math.sin(toRad(SUN_ALT_AT_SET)) - Math.sin(toRad(phi))*Math.sin(toRad(delta)))/(Math.cos(toRad(phi))*Math.cos(toRad(delta)));
+    if (val < -1 || val > 1) return null;
+    return toDeg(Math.acos(val));
+  }
+  function hoursToHM(h){ const hh=Math.floor(h); const mm=Math.round((h-hh)*60); return hh+' ชม. '+mm+' นาที'; }
+  function fmtThai(d){ const m=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']; return d.getDate()+' '+m[d.getMonth()]+' '+(d.getFullYear()+543); }
+
+  function computeSet(headingStr, daysBack, phi){
+    const hd = new Date(headingStr + 'T00:00:00');
+    const trigger = new Date(hd); trigger.setDate(trigger.getDate() - daysBack);
+    const N = dayOfYear(trigger);
+    const delta = solarDeclination(N);
+    const H = sunsetHourAngle(phi, delta);
+    if (H === null) return null;
+    const DL = 2*H/15;
+    return { heading: hd, trigger: trigger, N: N, delta: delta, H: H, DL: DL };
+  }
+
+  function calculate(){
+    const phi = parseFloat(document.getElementById('lat').value);
+    const daysBack = parseInt(document.getElementById('days-back').value);
+    if (isNaN(phi) || isNaN(daysBack)){ alert('กรุณากรอกละติจูดและระยะนับถอยหลังให้ครบ'); return; }
+
+    const inputs = ['h1','h2','h3'].map(id => document.getElementById(id).value).filter(v => v);
+    if (inputs.length === 0){ alert('กรุณากรอกวันออกดอกอย่างน้อย 1 ชุด'); return; }
+
+    const sets = [];
+    for (const v of inputs){
+      const s = computeSet(v, daysBack, phi);
+      if (s) sets.push(s);
+    }
+    if (sets.length === 0){ alert('พิกัด/วันที่นี้คำนวณความยาววันปกติไม่ได้'); return; }
+
+    let html = '';
+    sets.forEach((s, i) => {
+      html += '<div class="set-result">'
+        + '<div class="head">ชุดที่ ' + (i+1) + ' — ออกดอก ' + fmtThai(s.heading) + '</div>'
+        + '<ul class="steps">'
+        + '<li class="step"><span class="name">วันรับแสงวิกฤต (−' + daysBack + ' วัน)</span><span class="val">' + fmtThai(s.trigger) + '</span></li>'
+        + '<li class="step"><span class="name">N (ลำดับวันในปี)</span><span class="val">' + s.N + '</span></li>'
+        + '<li class="step"><span class="name">δ มุมปฏิเสธ</span><span class="val">' + s.delta.toFixed(2) + '°</span></li>'
+        + '<li class="step"><span class="name">H มุมชั่วโมงตก</span><span class="val">' + s.H.toFixed(2) + '°</span></li>'
+        + '<li class="step"><span class="name">DL ความยาววัน</span><span class="val">' + s.DL.toFixed(3) + ' ชม.</span></li>'
+        + '</ul></div>';
+    });
+    document.getElementById('set-results').innerHTML = html;
+
+    const avg = sets.reduce((a,s)=>a+s.DL,0) / sets.length;
+    document.getElementById('dl-hours').textContent = avg.toFixed(3) + ' ชม.';
+    document.getElementById('dl-hm').textContent = '≈ ' + hoursToHM(avg);
+
+    if (sets.length === 1){
+      document.getElementById('ans-label').textContent = 'ความยาววัน (DL) — ชุดเดียว';
+      document.getElementById('ans-tag').textContent = 'คำนวณเดี่ยว 1 ชุด';
+    } else {
+      document.getElementById('ans-label').textContent = 'ค่าช่วงแสงวิกฤตประจำพันธุ์ (เฉลี่ย ' + sets.length + ' ชุด)';
+      document.getElementById('ans-tag').textContent = 'เฉลี่ยจาก ' + sets.length + ' ชุดทดลอง';
+    }
+
+    document.getElementById('result').classList.add('show');
+  }
+
+  calculate();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('service-worker.js').catch(function(e) { console.log('SW failed:', e); });
+    });
+  }
+</script>
+</body>
+</html>

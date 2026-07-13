@@ -33,6 +33,12 @@
   .lat-status { font-size: 0.8rem; font-weight: 600; margin-top: 0.3rem; }
   .lat-status.default { color: var(--ink-soft); }
   .lat-status.changed { color: var(--paddy-dark); }
+  .date-select { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .date-select select { padding: 0.6rem 0.5rem; border: 1px solid var(--line); border-radius: 9px; font-size: 0.9rem; background: #fff; color: var(--ink); font-family: inherit; }
+  .date-select select:focus { outline: none; border-color: var(--paddy); box-shadow: 0 0 0 3px rgba(107,142,35,0.15); }
+  .date-select .day-select { flex: 0 0 4.2rem; }
+  .date-select .month-select { flex: 1 1 9rem; }
+  .date-select .year-select { flex: 0 0 5.5rem; }
   button { width: 100%; padding: 0.85rem; background: var(--paddy); color: #fff; border: none; border-radius: 9px; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: background 0.15s; }
   button:hover { background: var(--paddy-dark); }
   .result { display: none; }
@@ -64,17 +70,32 @@
     <div class="field">
       <label>วันออกดอกสะพรั่ง 80% (Heading Date) — กรอกอย่างน้อย 1 ชุด</label>
       <div class="set-row"><span class="set-label">ชุดที่ 1</span><div>
-        <input type="date" id="h1" value="2026-11-03" oninput="updateDateInfo('h1')">
+        <div class="date-select">
+          <select class="day-select" id="h1-day" onchange="onDateSelectChange('h1')" aria-label="วัน"></select>
+          <select class="month-select" id="h1-month" onchange="onDateSelectChange('h1')" aria-label="เดือน"></select>
+          <select class="year-select" id="h1-year" onchange="onDateSelectChange('h1')" aria-label="ปี พ.ศ."></select>
+        </div>
+        <input type="hidden" id="h1" value="2026-11-03">
         <p class="understood" id="h1-understood"></p>
         <p class="season-warn" id="h1-warn">วันออกดอกที่กรอกอยู่นอกช่วงฤดูกาลเก็บเกี่ยวปกติ (ก.ค.-ธ.ค.) กรุณาตรวจสอบอีกครั้ง</p>
       </div></div>
       <div class="set-row"><span class="set-label">ชุดที่ 2</span><div>
-        <input type="date" id="h2" value="2026-11-04" oninput="updateDateInfo('h2')">
+        <div class="date-select">
+          <select class="day-select" id="h2-day" onchange="onDateSelectChange('h2')" aria-label="วัน"></select>
+          <select class="month-select" id="h2-month" onchange="onDateSelectChange('h2')" aria-label="เดือน"></select>
+          <select class="year-select" id="h2-year" onchange="onDateSelectChange('h2')" aria-label="ปี พ.ศ."></select>
+        </div>
+        <input type="hidden" id="h2" value="2026-11-04">
         <p class="understood" id="h2-understood"></p>
         <p class="season-warn" id="h2-warn">วันออกดอกที่กรอกอยู่นอกช่วงฤดูกาลเก็บเกี่ยวปกติ (ก.ค.-ธ.ค.) กรุณาตรวจสอบอีกครั้ง</p>
       </div></div>
       <div class="set-row"><span class="set-label">ชุดที่ 3</span><div>
-        <input type="date" id="h3" value="2026-11-05" oninput="updateDateInfo('h3')">
+        <div class="date-select">
+          <select class="day-select" id="h3-day" onchange="onDateSelectChange('h3')" aria-label="วัน"></select>
+          <select class="month-select" id="h3-month" onchange="onDateSelectChange('h3')" aria-label="เดือน"></select>
+          <select class="year-select" id="h3-year" onchange="onDateSelectChange('h3')" aria-label="ปี พ.ศ."></select>
+        </div>
+        <input type="hidden" id="h3" value="2026-11-05">
         <p class="understood" id="h3-understood"></p>
         <p class="season-warn" id="h3-warn">วันออกดอกที่กรอกอยู่นอกช่วงฤดูกาลเก็บเกี่ยวปกติ (ก.ค.-ธ.ค.) กรุณาตรวจสอบอีกครั้ง</p>
       </div></div>
@@ -142,6 +163,77 @@
     const month = d.getMonth(); // 0=ม.ค. ... ช่วงฤดูกาลปกติ: ก.ค.(6) - ธ.ค.(11)
     const inSeason = (month >= 6 && month <= 11);
     warnEl.classList.toggle('show', !inSeason);
+  }
+
+  // ประกอบ ISO date จาก dropdown วัน/เดือน/ปี แล้วเขียนลง hidden input (id เดิม)
+  // เพื่อให้ computeSet()/calculate() ทำงานเหมือนเดิมทุกประการ โดยไม่ต้องแก้โค้ดคำนวณ
+  function daysInMonth(yearCE, monthIdx0){ return new Date(yearCE, monthIdx0+1, 0).getDate(); }
+
+  function rebuildDayOptions(id){
+    const daySel = document.getElementById(id + '-day');
+    const monthIdx = parseInt(document.getElementById(id + '-month').value);
+    const yearCE = parseInt(document.getElementById(id + '-year').value);
+    const maxDay = daysInMonth(yearCE, monthIdx);
+    const prevVal = daySel.value;
+    daySel.innerHTML = '<option value="">—</option>';
+    for (let dd = 1; dd <= maxDay; dd++){
+      const opt = document.createElement('option');
+      opt.value = dd; opt.textContent = dd;
+      daySel.appendChild(opt);
+    }
+    if (prevVal === ''){ daySel.value = ''; }
+    else if (parseInt(prevVal) <= maxDay){ daySel.value = prevVal; }
+    else { daySel.value = maxDay; }
+  }
+
+  function syncHiddenDate(id){
+    const dayVal = document.getElementById(id + '-day').value;
+    const hidden = document.getElementById(id);
+    if (dayVal === ''){ hidden.value = ''; updateDateInfo(id); return; }
+    const d = parseInt(dayVal);
+    const m = parseInt(document.getElementById(id + '-month').value); // 0-11
+    const y = parseInt(document.getElementById(id + '-year').value); // ค.ศ.
+    hidden.value = y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    updateDateInfo(id);
+  }
+
+  function onDateSelectChange(id){
+    rebuildDayOptions(id);
+    syncHiddenDate(id);
+  }
+
+  function initDateSelectors(id){
+    const hidden = document.getElementById(id);
+    const iso = hidden.value; // ค่าเริ่มต้น ISO ที่ฝังไว้ใน hidden input
+    const monthSel = document.getElementById(id + '-month');
+    const yearSel = document.getElementById(id + '-year');
+    const daySel = document.getElementById(id + '-day');
+
+    THAI_MONTHS_FULL.forEach((name, idx) => {
+      const opt = document.createElement('option');
+      opt.value = idx; opt.textContent = name;
+      monthSel.appendChild(opt);
+    });
+
+    const todayCE = new Date().getFullYear();
+    let y, m, d;
+    if (iso){ [y,m,d] = iso.split('-').map(Number); }
+    else { y = todayCE; m = new Date().getMonth()+1; d = null; }
+
+    const nowBE = todayCE + 543, defBE = y + 543;
+    const minBE = Math.min(nowBE, defBE) - 7, maxBE = Math.max(nowBE, defBE) + 7;
+    for (let yy = minBE; yy <= maxBE; yy++){
+      const opt = document.createElement('option');
+      opt.value = yy - 543; opt.textContent = yy;
+      yearSel.appendChild(opt);
+    }
+
+    monthSel.value = m - 1;
+    yearSel.value = y;
+    rebuildDayOptions(id);
+    daySel.value = d ? d : '';
+
+    syncHiddenDate(id);
   }
 
   function updateLatHint(){
@@ -214,7 +306,7 @@
     document.getElementById('result').classList.add('show');
   }
 
-  ['h1','h2','h3'].forEach(updateDateInfo);
+  ['h1','h2','h3'].forEach(initDateSelectors);
   updateLatHint();
   calculate();
 

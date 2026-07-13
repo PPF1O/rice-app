@@ -25,8 +25,14 @@
   input { width: 100%; padding: 0.7rem 0.85rem; border: 1px solid var(--line); border-radius: 9px; font-size: 1rem; background: #fff; color: var(--ink); font-family: inherit; }
   input:focus { outline: none; border-color: var(--paddy); box-shadow: 0 0 0 3px rgba(107,142,35,0.15); }
   .field { margin-bottom: 1rem; }
-  .set-row { display: grid; grid-template-columns: auto 1fr; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem; }
-  .set-label { font-size: 0.85rem; font-weight: 700; color: var(--paddy-dark); white-space: nowrap; }
+  .set-row { display: grid; grid-template-columns: auto 1fr; gap: 0.75rem; align-items: start; margin-bottom: 0.75rem; }
+  .set-label { font-size: 0.85rem; font-weight: 700; color: var(--paddy-dark); white-space: nowrap; padding-top: 0.7rem; }
+  .understood { font-size: 0.85rem; color: var(--paddy-dark); font-weight: 700; margin-top: 0.35rem; }
+  .season-warn { display: none; font-size: 0.78rem; color: #8a4b00; font-weight: 600; background: rgba(232,161,58,0.18); border: 1px solid rgba(201,127,30,0.5); border-radius: 8px; padding: 0.45rem 0.6rem; margin-top: 0.4rem; }
+  .season-warn.show { display: block; }
+  .lat-status { font-size: 0.8rem; font-weight: 600; margin-top: 0.3rem; }
+  .lat-status.default { color: var(--ink-soft); }
+  .lat-status.changed { color: var(--paddy-dark); }
   button { width: 100%; padding: 0.85rem; background: var(--paddy); color: #fff; border: none; border-radius: 9px; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: background 0.15s; }
   button:hover { background: var(--paddy-dark); }
   .result { display: none; }
@@ -57,9 +63,21 @@
     <h2>ข้อมูลนำเข้า</h2>
     <div class="field">
       <label>วันออกดอกสะพรั่ง 80% (Heading Date) — กรอกอย่างน้อย 1 ชุด</label>
-      <div class="set-row"><span class="set-label">ชุดที่ 1</span><input type="date" id="h1" value="2026-11-03"></div>
-      <div class="set-row"><span class="set-label">ชุดที่ 2</span><input type="date" id="h2" value="2026-11-04"></div>
-      <div class="set-row"><span class="set-label">ชุดที่ 3</span><input type="date" id="h3" value="2026-11-05"></div>
+      <div class="set-row"><span class="set-label">ชุดที่ 1</span><div>
+        <input type="date" id="h1" value="2026-11-03" oninput="updateDateInfo('h1')">
+        <p class="understood" id="h1-understood"></p>
+        <p class="season-warn" id="h1-warn">วันออกดอกที่กรอกอยู่นอกช่วงฤดูกาลเก็บเกี่ยวปกติ (ก.ค.-ธ.ค.) กรุณาตรวจสอบอีกครั้ง</p>
+      </div></div>
+      <div class="set-row"><span class="set-label">ชุดที่ 2</span><div>
+        <input type="date" id="h2" value="2026-11-04" oninput="updateDateInfo('h2')">
+        <p class="understood" id="h2-understood"></p>
+        <p class="season-warn" id="h2-warn">วันออกดอกที่กรอกอยู่นอกช่วงฤดูกาลเก็บเกี่ยวปกติ (ก.ค.-ธ.ค.) กรุณาตรวจสอบอีกครั้ง</p>
+      </div></div>
+      <div class="set-row"><span class="set-label">ชุดที่ 3</span><div>
+        <input type="date" id="h3" value="2026-11-05" oninput="updateDateInfo('h3')">
+        <p class="understood" id="h3-understood"></p>
+        <p class="season-warn" id="h3-warn">วันออกดอกที่กรอกอยู่นอกช่วงฤดูกาลเก็บเกี่ยวปกติ (ก.ค.-ธ.ค.) กรุณาตรวจสอบอีกครั้ง</p>
+      </div></div>
       <p class="hint">เว็บจะลบ 35 วันให้อัตโนมัติ (ระยะพัฒนารวง) เพื่อหาวันรับแสงวิกฤต — เว้นว่างได้ถ้ามีน้อยกว่า 3 ชุด</p>
     </div>
     <div class="field">
@@ -69,8 +87,10 @@
     </div>
     <div class="field">
       <label for="lat">ละติจูด φ (องศาเหนือ +)</label>
-      <input type="number" id="lat" value="16.43" step="0.01">
+      <input type="number" id="lat" value="16.43" step="0.01" oninput="updateLatHint()">
       <p class="hint">จาก Google Maps หรือ GPS มือถือ</p>
+      <p class="hint">16.43° = ค่าประมาณเดิม, ใส่ทศนิยมละเอียดกว่านี้ได้ถ้ามี GPS/พิกัดจริง เช่น 16.326667</p>
+      <p class="lat-status" id="lat-status"></p>
     </div>
     <button onclick="calculate()">คำนวณ DL และค่าเฉลี่ยประจำพันธุ์</button>
   </div>
@@ -107,6 +127,37 @@
     return h + ' ชม. ' + m + ' นาที ' + s + ' วินาที';
   }
   function fmtThai(d){ const m=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']; return d.getDate()+' '+m[d.getMonth()]+' '+(d.getFullYear()+543); }
+  const THAI_MONTHS_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  function fmtThaiFull(d){ return d.getDate()+' '+THAI_MONTHS_FULL[d.getMonth()]+' '+(d.getFullYear()+543); }
+
+  // แสดงค่าที่ระบบเข้าใจจริง (parse จาก ISO value ของ input date เสมอ ไม่ขึ้นกับรูปแบบที่จอผู้ใช้แสดง)
+  // เพื่อกันผู้ใช้กรอกวัน/เดือนสลับกันโดยไม่รู้ตัว
+  function updateDateInfo(id){
+    const val = document.getElementById(id).value; // ISO YYYY-MM-DD เสมอ
+    const understoodEl = document.getElementById(id + '-understood');
+    const warnEl = document.getElementById(id + '-warn');
+    if (!val){ understoodEl.textContent = ''; warnEl.classList.remove('show'); return; }
+    const d = new Date(val + 'T00:00:00');
+    understoodEl.textContent = 'ระบบเข้าใจว่า: ' + fmtThaiFull(d);
+    const month = d.getMonth(); // 0=ม.ค. ... ช่วงฤดูกาลปกติ: ก.ค.(6) - ธ.ค.(11)
+    const inSeason = (month >= 6 && month <= 11);
+    warnEl.classList.toggle('show', !inSeason);
+  }
+
+  function updateLatHint(){
+    const el = document.getElementById('lat');
+    const statusEl = document.getElementById('lat-status');
+    const val = el.value;
+    const num = parseFloat(val);
+    if (val === '' || isNaN(num)){ statusEl.textContent = ''; statusEl.className = 'lat-status'; return; }
+    if (Math.abs(num - 16.43) < 1e-9){
+      statusEl.textContent = 'ยังเป็นค่า default เดิม (16.43°) — ตรวจสอบว่าตรงกับพิกัดแปลงจริงหรือไม่';
+      statusEl.className = 'lat-status default';
+    } else {
+      statusEl.textContent = 'ค่านี้ถูกเปลี่ยนจาก default แล้ว (' + num + '°)';
+      statusEl.className = 'lat-status changed';
+    }
+  }
 
   function computeSet(headingStr, daysBack, phi){
     const hd = new Date(headingStr + 'T00:00:00');
@@ -163,6 +214,8 @@
     document.getElementById('result').classList.add('show');
   }
 
+  ['h1','h2','h3'].forEach(updateDateInfo);
+  updateLatHint();
   calculate();
 
   if ('serviceWorker' in navigator) {

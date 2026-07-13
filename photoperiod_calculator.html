@@ -99,7 +99,13 @@
     if (val < -1 || val > 1) return null;
     return toDeg(Math.acos(val));
   }
-  function hoursToHM(h){ const hh=Math.floor(h); const mm=Math.round((h-hh)*60); return hh+' ชม. '+mm+' นาที'; }
+  function hoursToHMS(hours) {
+    const totalSeconds = Math.round(hours * 3600); // ปัดครั้งเดียวตรงนี้ที่เดียว ป้องกันบั๊กจาก double-rounding
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    return h + ' ชม. ' + m + ' นาที ' + s + ' วินาที';
+  }
   function fmtThai(d){ const m=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.']; return d.getDate()+' '+m[d.getMonth()]+' '+(d.getFullYear()+543); }
 
   function computeSet(headingStr, daysBack, phi){
@@ -137,14 +143,14 @@
         + '<li class="step"><span class="name">N (ลำดับวันในปี)</span><span class="val">' + s.N + '</span></li>'
         + '<li class="step"><span class="name">δ มุมปฏิเสธ</span><span class="val">' + s.delta.toFixed(2) + '°</span></li>'
         + '<li class="step"><span class="name">H มุมชั่วโมงตก</span><span class="val">' + s.H.toFixed(2) + '°</span></li>'
-        + '<li class="step"><span class="name">DL ความยาววัน</span><span class="val">' + s.DL.toFixed(3) + ' ชม.</span></li>'
+        + '<li class="step"><span class="name">DL ความยาววัน</span><span class="val">' + hoursToHMS(s.DL) + ' (' + s.DL.toFixed(6) + ' ชม.)</span></li>'
         + '</ul></div>';
     });
     document.getElementById('set-results').innerHTML = html;
 
     const avg = sets.reduce((a,s)=>a+s.DL,0) / sets.length;
-    document.getElementById('dl-hours').textContent = avg.toFixed(3) + ' ชม.';
-    document.getElementById('dl-hm').textContent = '≈ ' + hoursToHM(avg);
+    document.getElementById('dl-hours').textContent = hoursToHMS(avg);
+    document.getElementById('dl-hm').textContent = '(' + avg.toFixed(6) + ' ชม.)';
 
     if (sets.length === 1){
       document.getElementById('ans-label').textContent = 'ความยาววัน (DL) — ชุดเดียว';

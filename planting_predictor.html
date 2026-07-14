@@ -158,6 +158,11 @@
   <div class="card">
     <h2>ข้อมูลนำเข้า</h2>
     <div class="field">
+      <label>สูตรคำนวณมุมปฏิเสธ (δ)</label>
+      <label style="font-weight:400;"><input type="radio" name="formula" value="cooper" checked> Cooper (1969) — ตามรายงานหลัก</label>
+      <label style="font-weight:400;"><input type="radio" name="formula" value="spencer"> Spencer (1971) — แม่นยำกว่า (วงโคจรวงรี)</label>
+    </div>
+    <div class="field">
       <label for="lat">ละติจูดแปลงนา φ (องศาเหนือ +)</label>
       <input type="number" id="lat" value="16.43" step="0.01">
       <button type="button" class="gps-btn" onclick="fetchGPS()">📍 ดึงพิกัดจาก GPS ตำแหน่งปัจจุบัน</button>
@@ -221,9 +226,21 @@
   const SUN_ALT_AT_SET = -0.833; // องศา: ชดเชยการหักเหแสง (0.56°) + รัศมีดวงอาทิตย์ = ค่ามาตรฐานสากล
   function toRad(d){ return d*Math.PI/180; }
   function toDeg(r){ return r*180/Math.PI; }
-  function solarDeclination(N){ return 23.45*Math.sin(toRad((360/365)*(284+N))); }
-  function daylength(N, phi){
-    const delta = solarDeclination(N);
+  function declinationCooper(N){ return 23.45*Math.sin(toRad((360/365)*(284+N))); }
+  function declinationSpencer(N) {
+    const gamma = 2*Math.PI*(N-1)/365;
+    const D = 0.006918
+      - 0.399912*Math.cos(gamma) + 0.070257*Math.sin(gamma)
+      - 0.006758*Math.cos(2*gamma) + 0.000907*Math.sin(2*gamma)
+      - 0.002697*Math.cos(3*gamma) + 0.001480*Math.sin(3*gamma);
+    return D * 180/Math.PI; // แปลงเรเดียนเป็นองศา
+  }
+  function getDeclination(N, method) {
+    return method === 'spencer' ? declinationSpencer(N) : declinationCooper(N);
+  }
+  const FORMULA_LABEL = { cooper: 'Cooper, 1969', spencer: 'Spencer, 1971' };
+  function daylength(N, phi, method){
+    const delta = getDeclination(N, method);
     // สูตรเต็ม: หา H ณ มุมเงยดวงอาทิตย์ที่ตกจริง (รวมหักเหแสง)
     const val = (Math.sin(toRad(SUN_ALT_AT_SET)) - Math.sin(toRad(phi))*Math.sin(toRad(delta)))
                 / (Math.cos(toRad(phi))*Math.cos(toRad(delta)));
@@ -240,11 +257,11 @@
     return d.getDate() + ' ' + months[d.getMonth()] + ' ' + (d.getFullYear()+543);
   }
 
-  function findTriggerDay(phi, targetDL){
+  function findTriggerDay(phi, targetDL, method){
     // หาวันบน "ขาลง" (แสงกำลังสั้นลง) ที่ DL ตัดผ่านค่าเป้าหมาย
     for (let N = 1; N <= 365; N++){
-      const dl = daylength(N, phi);
-      const dlNext = daylength(N < 365 ? N+1 : 365, phi);
+      const dl = daylength(N, phi, method);
+      const dlNext = daylength(N < 365 ? N+1 : 365, phi, method);
       if (dl === null || dlNext === null) continue;
       if (dl >= targetDL && dlNext < targetDL) return N; // ขาลง
     }
@@ -287,6 +304,8 @@
     const targetDL = parseFloat(document.getElementById('dl').value);
     const age = parseInt(document.getElementById('age').value);
     const year = parseInt(document.getElementById('year').value);
+    const method = document.querySelector('input[name="formula"]:checked').value;
+    const otherMethod = method === 'spencer' ? 'cooper' : 'spencer';
 
     if (isNaN(phi) || isNaN(targetDL) || isNaN(age) || isNaN(year)){
       alert('กรุณากรอกข้อมูลให้ครบทุกช่อง'); return;
@@ -297,7 +316,7 @@
       return;
     }
 
-    const N = findTriggerDay(phi, targetDL);
+    const N = findTriggerDay(phi, targetDL, method);
     const warnEl = document.getElementById('warn');
 
     if (N === null){
@@ -314,7 +333,15 @@
     document.getElementById('tl-trigger').textContent = fmtThai(triggerDate);
     document.getElementById('tl-harvest').textContent = fmtThai(harvest);
 
-    warnEl.textContent = 'หมายเหตุ: อายุขั้นต่ำ ' + age + ' วัน เป็นค่าประมาณ ควรยืนยันกับข้อมูลพันธุ์จริง / ผลนี้รวมการชดเชยการหักเหของแสงในชั้นบรรยากาศแล้ว (−0.833°)';
+    const delta = getDeclination(N, method);
+    const deltaOther = getDeclination(N, otherMethod);
+    const diff = Math.abs(delta - deltaOther).toFixed(2);
+    document.querySelector('#tl-trigger').previousElementSibling.querySelector('.d').textContent =
+      'วันที่ความยาววัน = ค่าประจำพันธุ์พอดี (ขาลง) — δ = ' + delta.toFixed(2) + '° (' + FORMULA_LABEL[method] + ')';
+
+    warnEl.innerHTML = 'หมายเหตุ: อายุขั้นต่ำ ' + age + ' วัน เป็นค่าประมาณ ควรยืนยันกับข้อมูลพันธุ์จริง / ผลนี้รวมการชดเชยการหักเหของแสงในชั้นบรรยากาศแล้ว (−0.833°)'
+      + '<br>ใช้สูตร ' + FORMULA_LABEL[method] + ' — δ ที่วันทริกเกอร์ = ' + delta.toFixed(2) + '°'
+      + ' (' + FORMULA_LABEL[otherMethod] + ' จะได้ ' + deltaOther.toFixed(2) + '°, ต่างกัน ' + diff + '°)';
 
     document.getElementById('result').classList.add('show');
   }

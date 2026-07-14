@@ -107,6 +107,11 @@
       <p class="hint">ค่ามาตรฐาน 35 วัน (ระยะรวงอ่อนพัฒนาในกาบใบ) — ปรับได้ตามพันธุ์</p>
     </div>
     <div class="field">
+      <label>สูตรคำนวณมุมปฏิเสธ (δ)</label>
+      <label style="font-weight:400;"><input type="radio" name="formula" value="cooper" checked> Cooper (1969) — ตามรายงานหลัก</label>
+      <label style="font-weight:400;"><input type="radio" name="formula" value="spencer"> Spencer (1971) — แม่นยำกว่า (วงโคจรวงรี)</label>
+    </div>
+    <div class="field">
       <label for="lat">ละติจูด φ (องศาเหนือ +)</label>
       <input type="number" id="lat" value="16.43" step="0.01" oninput="updateLatHint()">
       <p class="hint">จาก Google Maps หรือ GPS มือถือ</p>
@@ -134,7 +139,19 @@
   function toRad(d){ return d*Math.PI/180; }
   function toDeg(r){ return r*180/Math.PI; }
   function dayOfYear(d){ const s = new Date(d.getFullYear(),0,0); return Math.floor((d-s)/86400000); }
-  function solarDeclination(N){ return 23.45*Math.sin(toRad((360/365)*(284+N))); }
+  function declinationCooper(N){ return 23.45*Math.sin(toRad((360/365)*(284+N))); }
+  function declinationSpencer(N) {
+    const gamma = 2*Math.PI*(N-1)/365;
+    const D = 0.006918
+      - 0.399912*Math.cos(gamma) + 0.070257*Math.sin(gamma)
+      - 0.006758*Math.cos(2*gamma) + 0.000907*Math.sin(2*gamma)
+      - 0.002697*Math.cos(3*gamma) + 0.001480*Math.sin(3*gamma);
+    return D * 180/Math.PI; // แปลงเรเดียนเป็นองศา
+  }
+  function getDeclination(N, method) {
+    return method === 'spencer' ? declinationSpencer(N) : declinationCooper(N);
+  }
+  const FORMULA_LABEL = { cooper: 'Cooper, 1969', spencer: 'Spencer, 1971' };
   function sunsetHourAngle(phi, delta){
     const val = (Math.sin(toRad(SUN_ALT_AT_SET)) - Math.sin(toRad(phi))*Math.sin(toRad(delta)))/(Math.cos(toRad(phi))*Math.cos(toRad(delta)));
     if (val < -1 || val > 1) return null;
@@ -251,15 +268,16 @@
     }
   }
 
-  function computeSet(headingStr, daysBack, phi){
+  function computeSet(headingStr, daysBack, phi, method){
     const hd = new Date(headingStr + 'T00:00:00');
     const trigger = new Date(hd); trigger.setDate(trigger.getDate() - daysBack);
     const N = dayOfYear(trigger);
-    const delta = solarDeclination(N);
+    const delta = getDeclination(N, method);
+    const deltaOther = getDeclination(N, method === 'spencer' ? 'cooper' : 'spencer');
     const H = sunsetHourAngle(phi, delta);
     if (H === null) return null;
     const DL = 2*H/15;
-    return { heading: hd, trigger: trigger, N: N, delta: delta, H: H, DL: DL };
+    return { heading: hd, trigger: trigger, N: N, delta: delta, deltaOther: deltaOther, method: method, H: H, DL: DL };
   }
 
   function calculate(){
@@ -267,24 +285,29 @@
     const daysBack = parseInt(document.getElementById('days-back').value);
     if (isNaN(phi) || isNaN(daysBack)){ alert('กรุณากรอกละติจูดและระยะนับถอยหลังให้ครบ'); return; }
 
+    const method = document.querySelector('input[name="formula"]:checked').value;
+    const otherMethod = method === 'spencer' ? 'cooper' : 'spencer';
+
     const inputs = ['h1','h2','h3'].map(id => document.getElementById(id).value).filter(v => v);
     if (inputs.length === 0){ alert('กรุณากรอกวันออกดอกอย่างน้อย 1 ชุด'); return; }
 
     const sets = [];
     for (const v of inputs){
-      const s = computeSet(v, daysBack, phi);
+      const s = computeSet(v, daysBack, phi, method);
       if (s) sets.push(s);
     }
     if (sets.length === 0){ alert('พิกัด/วันที่นี้คำนวณความยาววันปกติไม่ได้'); return; }
 
     let html = '';
     sets.forEach((s, i) => {
+      const diff = Math.abs(s.delta - s.deltaOther).toFixed(2);
       html += '<div class="set-result">'
         + '<div class="head">ชุดที่ ' + (i+1) + ' — ออกดอก ' + fmtThai(s.heading) + '</div>'
         + '<ul class="steps">'
         + '<li class="step"><span class="name">วันรับแสงวิกฤต (−' + daysBack + ' วัน)</span><span class="val">' + fmtThai(s.trigger) + '</span></li>'
         + '<li class="step"><span class="name">N (ลำดับวันในปี)</span><span class="val">' + s.N + '</span></li>'
-        + '<li class="step"><span class="name">δ มุมปฏิเสธ</span><span class="val">' + s.delta.toFixed(2) + '°</span></li>'
+        + '<li class="step"><span class="name">δ มุมปฏิเสธ (' + FORMULA_LABEL[method] + ')</span><span class="val">' + s.delta.toFixed(2) + '°</span></li>'
+        + '<li class="step"><span class="name">เทียบ ' + FORMULA_LABEL[otherMethod] + '</span><span class="val">' + s.deltaOther.toFixed(2) + '° (ต่างกัน ' + diff + '°)</span></li>'
         + '<li class="step"><span class="name">H มุมชั่วโมงตก</span><span class="val">' + s.H.toFixed(2) + '°</span></li>'
         + '<li class="step"><span class="name">DL ความยาววัน</span><span class="val">' + hoursToHMS(s.DL) + ' (' + s.DL.toFixed(6) + ' ชม.)</span></li>'
         + '</ul></div>';

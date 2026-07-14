@@ -145,6 +145,14 @@
     color: var(--ink-soft);
     margin-top: 1rem;
   }
+  .segmented { display: flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .seg-input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+  .seg-btn { flex: 1 1 50%; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0.6rem 0.5rem; min-height: 44px; margin: 0; font-size: 0.82rem; font-weight: 600; color: var(--ink-soft); background: var(--card); cursor: pointer; transition: background 0.15s ease, color 0.15s ease; user-select: none; }
+  .seg-btn:not(:last-of-type) { border-right: 1px solid var(--line); }
+  .seg-btn:hover { background: var(--cream); }
+  .seg-input:checked + .seg-btn { background: var(--paddy); color: #fff; }
+  .seg-input:checked + .seg-btn:hover { background: var(--paddy-dark); }
+  .seg-input:focus-visible + .seg-btn { box-shadow: 0 0 0 3px rgba(107,142,35,0.35); }
 </style>
 </head>
 <body>
@@ -159,8 +167,12 @@
     <h2>ข้อมูลนำเข้า</h2>
     <div class="field">
       <label>สูตรคำนวณมุมปฏิเสธ (δ)</label>
-      <label style="font-weight:400;"><input type="radio" name="formula" value="cooper" checked> Cooper (1969) — ตามรายงานหลัก</label>
-      <label style="font-weight:400;"><input type="radio" name="formula" value="spencer"> Spencer (1971) — แม่นยำกว่า (วงโคจรวงรี)</label>
+      <div class="segmented">
+        <input type="radio" class="seg-input" id="formula-cooper" name="formula" value="cooper" checked onchange="predict()">
+        <label for="formula-cooper" class="seg-btn">Cooper (1969) — ตามรายงานหลัก</label>
+        <input type="radio" class="seg-input" id="formula-spencer" name="formula" value="spencer" onchange="predict()">
+        <label for="formula-spencer" class="seg-btn">Spencer (1971) — แม่นยำกว่า (วงโคจรวงรี)</label>
+      </div>
     </div>
     <div class="field">
       <label for="lat">ละติจูดแปลงนา φ (องศาเหนือ +)</label>

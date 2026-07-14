@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rice-photoperiod-v7';
+const CACHE_NAME = 'rice-photoperiod-v8';
 const FILES_TO_CACHE = [
   './',
   './index.html',

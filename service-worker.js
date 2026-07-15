@@ -1,10 +1,12 @@
-const CACHE_NAME = 'rice-photoperiod-v9';
+const CACHE_NAME = 'rice-photoperiod-v10';
 const FILES_TO_CACHE = [
   './',
   './index.html',
   './planting_predictor.html',
   './photoperiod_calculator.html',
   './manifest.json',
+  './style.css',
+  './calc-core.js',
   './icon-192.png',
   './icon-512.png'
 ];

@@ -3,32 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'">
 <title>ตัวพยากรณ์วันปลูก — ข้าวไวแสง</title>
 <link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="พยากรณ์วันปลูก">
+<meta name="description" content="พยากรณ์เส้นตายวันปลูกข้าวไวแสง จากพิกัดแปลงนาและค่าช่วงแสงวิกฤตประจำพันธุ์">
 <meta name="theme-color" content="#6b8e23">
 <style>
-  :root {
-    --paddy: #6b8e23;
-    --paddy-dark: #4a6318;
-    --sun: #e8a13a;
-    --sun-deep: #c97f1e;
-    --sky: #5a8fb5;
-    --cream: #f7f3e8;
-    --card: #fffdf7;
-    --line: #ddd4bf;
-    --ink: #2a2620;
-    --ink-soft: #6b6355;
-    --alert: #c15a3a;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Segoe UI', 'Sarabun', system-ui, sans-serif;
-    background: var(--cream);
-    color: var(--ink);
-    line-height: 1.6;
-    padding: 1.5rem;
-  }
-  .wrap { max-width: 640px; margin: 0 auto; }
   header {
     text-align: center;
     padding: 1.5rem 0 2rem;
@@ -47,55 +32,13 @@
   }
   h1 { font-size: 1.4rem; color: var(--paddy-dark); font-weight: 700; }
   .sub { font-size: 0.9rem; color: var(--ink-soft); margin-top: 0.35rem; }
-  .card {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-  .card h2 {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--paddy);
-    margin-bottom: 1rem;
-    font-weight: 700;
-  }
-  label { display: block; font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 0.35rem; font-weight: 600; }
-  .hint { font-size: 0.75rem; color: var(--ink-soft); font-weight: 400; margin-top: 0.25rem; }
-  input {
-    width: 100%;
-    padding: 0.7rem 0.85rem;
-    border: 1px solid var(--line);
-    border-radius: 9px;
-    font-size: 1rem;
-    background: #fff;
-    color: var(--ink);
-    font-family: inherit;
-  }
-  input:focus { outline: none; border-color: var(--paddy); box-shadow: 0 0 0 3px rgba(107,142,35,0.15); }
-  .field { margin-bottom: 1.1rem; }
-  button {
-    width: 100%;
-    padding: 0.85rem;
-    background: var(--paddy);
-    color: #fff;
-    border: none;
-    border-radius: 9px;
-    font-size: 1rem;
-    font-weight: 700;
-    cursor: pointer;
-    font-family: inherit;
-    transition: background 0.15s;
-  }
-  button:hover { background: var(--paddy-dark); }
   .gps-btn {
     width: 100%;
     margin-top: 0.5rem;
-    padding: 0.6rem;
+    padding: 0.75rem;
+    min-height: 44px;
     background: #fff;
-    color: var(--sky);
+    color: #3d6d8f;
     border: 1px solid var(--sky);
     border-radius: 8px;
     font-size: 0.88rem;
@@ -106,8 +49,6 @@
   }
   .gps-btn:hover { background: var(--sky); color: #fff; }
   .gps-btn:disabled { opacity: 0.6; cursor: wait; }
-  .result { display: none; }
-  .result.show { display: block; }
   .deadline {
     text-align: center;
     padding: 1.5rem;
@@ -145,20 +86,12 @@
     color: var(--ink-soft);
     margin-top: 1rem;
   }
-  .segmented { display: flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
-  .seg-input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
-  .seg-btn { flex: 1 1 50%; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0.6rem 0.5rem; min-height: 44px; margin: 0; font-size: 0.82rem; font-weight: 600; color: var(--ink-soft); background: var(--card); cursor: pointer; transition: background 0.15s ease, color 0.15s ease; user-select: none; }
-  .seg-btn:not(:last-of-type) { border-right: 1px solid var(--line); }
-  .seg-btn:hover { background: var(--cream); }
-  .seg-input:checked + .seg-btn { background: var(--paddy); color: #fff; }
-  .seg-input:checked + .seg-btn:hover { background: var(--paddy-dark); }
-  .seg-input:focus-visible + .seg-btn { box-shadow: 0 0 0 3px rgba(107,142,35,0.35); }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="badge">🌾</div>
+    <div class="badge" aria-hidden="true">🌾</div>
     <h1>ตัวพยากรณ์วันปลูกสุดท้าย</h1>
     <p class="sub">ใส่พิกัด + ค่าช่วงแสงวิกฤตประจำพันธุ์ → คำนวณย้อนกลับหาเส้นตายวันปลูก</p>
   </header>
@@ -176,25 +109,26 @@
     </div>
     <div class="field">
       <label for="lat">ละติจูดแปลงนา φ (องศาเหนือ +)</label>
-      <input type="number" id="lat" value="16.43" step="0.01">
+      <input type="number" id="lat" value="16.43" step="0.01" min="-66.5" max="66.5">
       <button type="button" class="gps-btn" onclick="fetchGPS()">📍 ดึงพิกัดจาก GPS ตำแหน่งปัจจุบัน</button>
       <p class="hint" id="gps-status">ดูจาก Google Maps (กดค้างที่จุด) หรือกดปุ่มดึง GPS เมื่ออยู่ที่แปลงจริง</p>
     </div>
     <div class="field">
       <label for="dl">ค่าช่วงแสงวิกฤตประจำพันธุ์ (ชั่วโมง)</label>
-      <input type="number" id="dl" value="11.85" step="0.01">
-      <p class="hint">ค่าที่ค้นพบจากการทดลอง (จากเว็บคำนวณโหมด A เฉลี่ย 3 ชุด)</p>
+      <input type="number" id="dl" value="11.85" step="0.01" min="0" max="24">
+      <p class="hint">ค่าที่ค้นพบจากการทดลอง (จาก<a href="photoperiod_calculator.html">เว็บคำนวณช่วงแสงวิกฤต</a> เฉลี่ย 3 ชุด)</p>
     </div>
     <div class="field">
       <label for="age">อายุขั้นต่ำทางลำต้น-ใบ ก่อนพร้อมออกดอก (วัน)</label>
-      <input type="number" id="age" value="45" step="1">
+      <input type="number" id="age" value="45" step="1" min="1">
       <p class="hint">คุณสมบัติของพันธุ์ข้าว — ค่าเริ่มต้น 45 วัน (ปรับได้ตามพันธุ์)</p>
     </div>
     <div class="field">
       <label for="year">ปีที่จะปลูก (ค.ศ.)</label>
-      <input type="number" id="year" value="2026" step="1">
+      <input type="number" id="year" value="2026" step="1" min="1900" max="2200">
     </div>
     <button onclick="predict()">คำนวณเส้นตายวันปลูก</button>
+    <p class="error-banner" id="predict-error" role="alert"></p>
   </div>
 
   <div class="card result" id="result">
@@ -234,23 +168,19 @@
   </div>
 </div>
 
+<script src="calc-core.js"></script>
 <script>
-  const SUN_ALT_AT_SET = -0.833; // องศา: ชดเชยการหักเหแสง (0.56°) + รัศมีดวงอาทิตย์ = ค่ามาตรฐานสากล
-  function toRad(d){ return d*Math.PI/180; }
-  function toDeg(r){ return r*180/Math.PI; }
-  function declinationCooper(N){ return 23.45*Math.sin(toRad((360/365)*(284+N))); }
-  function declinationSpencer(N) {
-    const gamma = 2*Math.PI*(N-1)/365;
-    const D = 0.006918
-      - 0.399912*Math.cos(gamma) + 0.070257*Math.sin(gamma)
-      - 0.006758*Math.cos(2*gamma) + 0.000907*Math.sin(2*gamma)
-      - 0.002697*Math.cos(3*gamma) + 0.001480*Math.sin(3*gamma);
-    return D * 180/Math.PI; // แปลงเรเดียนเป็นองศา
+  function showPredictError(msg){
+    const el = document.getElementById('predict-error');
+    el.textContent = msg;
+    el.classList.add('show');
   }
-  function getDeclination(N, method) {
-    return method === 'spencer' ? declinationSpencer(N) : declinationCooper(N);
+  function clearPredictError(){
+    const el = document.getElementById('predict-error');
+    el.textContent = '';
+    el.classList.remove('show');
   }
-  const FORMULA_LABEL = { cooper: 'Cooper, 1969', spencer: 'Spencer, 1971' };
+
   function daylength(N, phi, method){
     const delta = getDeclination(N, method);
     // สูตรเต็ม: หา H ณ มุมเงยดวงอาทิตย์ที่ตกจริง (รวมหักเหแสง)
@@ -263,10 +193,6 @@
     const d = new Date(year, 0, 1);
     d.setDate(d.getDate() + (N-1));
     return d;
-  }
-  function fmtThai(d){
-    const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-    return d.getDate() + ' ' + months[d.getMonth()] + ' ' + (d.getFullYear()+543);
   }
 
   function findTriggerDay(phi, targetDL, method){
@@ -312,6 +238,7 @@
   }
 
   function predict(){
+    clearPredictError();
     const phi = parseFloat(document.getElementById('lat').value);
     const targetDL = parseFloat(document.getElementById('dl').value);
     const age = parseInt(document.getElementById('age').value);
@@ -320,11 +247,11 @@
     const otherMethod = method === 'spencer' ? 'cooper' : 'spencer';
 
     if (isNaN(phi) || isNaN(targetDL) || isNaN(age) || isNaN(year)){
-      alert('กรุณากรอกข้อมูลให้ครบทุกช่อง'); return;
+      showPredictError('กรุณากรอกข้อมูลให้ครบทุกช่อง'); return;
     }
 
     if (Math.abs(phi) > 66.5){
-      alert('ละติจูด ' + phi + '° อยู่นอกเขตที่คำนวณได้ (เกินเส้นอาร์กติก/แอนตาร์กติก ±66.5°)\n\nบริเวณนี้มีปรากฏการณ์กลางวัน/กลางคืนต่อเนื่อง แบบจำลองช่วงแสงข้าวนาปีจึงใช้ไม่ได้ — กรุณาใช้ละติจูดในเขตร้อน/กึ่งร้อน');
+      showPredictError('ละติจูด ' + phi + '° อยู่นอกเขตที่คำนวณได้ (เกินเส้นอาร์กติก/แอนตาร์กติก ±66.5°) — บริเวณนี้มีปรากฏการณ์กลางวัน/กลางคืนต่อเนื่อง แบบจำลองช่วงแสงข้าวนาปีจึงใช้ไม่ได้ กรุณาใช้ละติจูดในเขตร้อน/กึ่งร้อน');
       return;
     }
 
@@ -332,7 +259,7 @@
     const warnEl = document.getElementById('warn');
 
     if (N === null){
-      alert('ไม่พบวันที่ความยาววันตรงกับค่าเป้าหมายที่ละติจูดนี้ — อาจเป็นเพราะพิกัดใกล้เส้นศูนย์สูตร/ขั้วโลก หรือค่า DL เป้าหมายอยู่นอกช่วงที่เป็นไปได้');
+      showPredictError('ไม่พบวันที่ความยาววันตรงกับค่าเป้าหมายที่ละติจูดนี้ — อาจเป็นเพราะพิกัดใกล้เส้นศูนย์สูตร/ขั้วโลก หรือค่า DL เป้าหมายอยู่นอกช่วงที่เป็นไปได้');
       return;
     }
 

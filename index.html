@@ -3,32 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'">
 <title>ข้าวไวแสง — เครื่องมือคำนวณและพยากรณ์</title>
 <link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="ข้าวไวแสง">
+<meta name="description" content="เครื่องมือคำนวณช่วงแสงวิกฤตและพยากรณ์วันปลูกสำหรับข้าวนาปีไวแสง ตามหลักดาราศาสตร์ทรงกลมฟ้า">
 <meta name="theme-color" content="#6b8e23">
 <style>
-  :root {
-    --paddy: #6b8e23;
-    --paddy-dark: #4a6318;
-    --sun: #e8a13a;
-    --sun-deep: #c97f1e;
-    --sky: #5a8fb5;
-    --cream: #f7f3e8;
-    --card: #fffdf7;
-    --line: #ddd4bf;
-    --ink: #2a2620;
-    --ink-soft: #6b6355;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'Segoe UI', 'Sarabun', system-ui, sans-serif;
-    background: var(--cream);
-    color: var(--ink);
-    line-height: 1.6;
-    padding: 1.5rem;
-    min-height: 100vh;
-  }
-  .wrap { max-width: 640px; margin: 0 auto; }
   header {
     text-align: center;
     padding: 2rem 0 2.5rem;
@@ -89,7 +74,7 @@
 <body>
   <div class="wrap">
     <header>
-      <div class="badge">🌾</div>
+      <div class="badge" aria-hidden="true">🌾</div>
       <h1>ข้าวนาปีไวแสง</h1>
       <p class="sub">เครื่องมือคำนวณช่วงแสงวิกฤตและพยากรณ์วันปลูก</p>
     </header>
@@ -97,18 +82,18 @@
     <nav class="menu">
       <a class="tool" href="photoperiod_calculator.html">
         <div class="tool-head">
-          <span class="icon calc">☀️</span>
+          <span class="icon calc" aria-hidden="true">☀️</span>
           <h2>เครื่องคำนวณช่วงแสงวิกฤต</h2>
-          <span class="arrow">→</span>
+          <span class="arrow" aria-hidden="true">→</span>
         </div>
         <p>คำนวณความยาวช่วงแสงวิกฤตตามหลักดาราศาสตร์ทรงกลมฟ้า จากละติจูดและวันในรอบปี</p>
       </a>
 
       <a class="tool" href="planting_predictor.html">
         <div class="tool-head">
-          <span class="icon predict">🌱</span>
+          <span class="icon predict" aria-hidden="true">🌱</span>
           <h2>ตัวพยากรณ์วันปลูก</h2>
-          <span class="arrow">→</span>
+          <span class="arrow" aria-hidden="true">→</span>
         </div>
         <p>พยากรณ์เส้นตายวันปลูกสุดท้าย เพื่อให้ข้าวไวแสงออกดอกและเก็บเกี่ยวได้ทันฤดู</p>
       </a>

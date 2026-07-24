@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rice-photoperiod-v10';
+const CACHE_NAME = 'rice-photoperiod-v11';
 const FILES_TO_CACHE = [
   './',
   './index.html',
@@ -7,6 +7,7 @@ const FILES_TO_CACHE = [
   './manifest.json',
   './style.css',
   './calc-core.js',
+  './reference-data/khonkaen-sun-2026.js',
   './icon-192.png',
   './icon-512.png'
 ];

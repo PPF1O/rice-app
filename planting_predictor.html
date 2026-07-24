@@ -32,23 +32,6 @@
   }
   h1 { font-size: 1.4rem; color: var(--paddy-dark); font-weight: 700; }
   .sub { font-size: 0.9rem; color: var(--ink-soft); margin-top: 0.35rem; }
-  .gps-btn {
-    width: 100%;
-    margin-top: 0.5rem;
-    padding: 0.75rem;
-    min-height: 44px;
-    background: #fff;
-    color: #3d6d8f;
-    border: 1px solid var(--sky);
-    border-radius: 8px;
-    font-size: 0.88rem;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.15s;
-  }
-  .gps-btn:hover { background: var(--sky); color: #fff; }
-  .gps-btn:disabled { opacity: 0.6; cursor: wait; }
   .deadline {
     text-align: center;
     padding: 1.5rem;
@@ -204,37 +187,6 @@
       if (dl >= targetDL && dlNext < targetDL) return N; // ขาลง
     }
     return null;
-  }
-
-  function fetchGPS(){
-    const status = document.getElementById('gps-status');
-    const btn = document.querySelector('.gps-btn');
-    if (!navigator.geolocation){
-      status.textContent = '⚠ อุปกรณ์นี้ไม่รองรับ GPS — กรุณากรอกละติจูดเอง';
-      return;
-    }
-    status.textContent = 'กำลังค้นหาตำแหน่ง... (กรุณาอนุญาตการเข้าถึงตำแหน่ง)';
-    btn.disabled = true;
-    navigator.geolocation.getCurrentPosition(
-      function(pos){
-        const lat = pos.coords.latitude;
-        const lon = pos.coords.longitude;
-        document.getElementById('lat').value = lat.toFixed(4);
-        status.textContent = '✓ ได้พิกัดแล้ว: ' + lat.toFixed(4) + '°N, ' + lon.toFixed(4) + '°E';
-        btn.disabled = false;
-        predict();
-      },
-      function(err){
-        const msgs = {
-          1: '⚠ ถูกปฏิเสธการเข้าถึงตำแหน่ง — กรุณาอนุญาตในเบราว์เซอร์ หรือกรอกละติจูดเอง',
-          2: '⚠ หาตำแหน่งไม่ได้ — ตรวจสอบว่าเปิด GPS อยู่ หรือกรอกละติจูดเอง',
-          3: '⚠ ใช้เวลานานเกินไป — ลองใหม่ หรือกรอกละติจูดเอง'
-        };
-        status.textContent = msgs[err.code] || '⚠ เกิดข้อผิดพลาด — กรุณากรอกละติจูดเอง';
-        btn.disabled = false;
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
   }
 
   function predict(){

@@ -41,6 +41,13 @@
   .step .name { color: var(--ink-soft); }
   .step .val { font-weight: 700; font-variant-numeric: tabular-nums; }
   .foot { text-align: center; font-size: 0.78rem; color: var(--ink-soft); margin-top: 1rem; }
+  .compare-block { margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px dashed var(--line); }
+  .compare-head { font-size: 0.8rem; font-weight: 700; color: var(--sky); margin-bottom: 0.4rem; }
+  .compare-list { list-style: none; }
+  .compare-list li { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; padding: 0.3rem 0; font-size: 0.82rem; }
+  .compare-list li span:first-child { color: var(--ink-soft); }
+  .compare-list li span:last-child { font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+  .compare-note { font-size: 0.72rem; color: var(--ink-soft); margin-top: 0.4rem; line-height: 1.4; }
 </style>
 </head>
 <body>
@@ -104,6 +111,7 @@
     <div class="field">
       <label for="lat">ละติจูด φ (องศาเหนือ +)</label>
       <input type="number" id="lat" value="16.43" step="0.01" min="-66.5" max="66.5" oninput="updateLatHint()">
+      <button type="button" class="gps-btn" onclick="fetchGPS()">📍 ดึงพิกัดจาก GPS ตำแหน่งปัจจุบัน</button>
       <p class="hint">จาก Google Maps หรือ GPS มือถือ</p>
       <p class="lat-status" id="lat-status"></p>
     </div>
@@ -124,6 +132,7 @@
   </div>
 </div>
 
+<script src="reference-data/khonkaen-sun-2026.js"></script>
 <script src="calc-core.js"></script>
 <script>
   const SEASON_WARN_TEXT = 'วันออกดอกที่กรอกอยู่นอกช่วงฤดูกาลเก็บเกี่ยวปกติ (ก.ค.-ธ.ค.) กรุณาตรวจสอบอีกครั้ง';
@@ -153,8 +162,24 @@
     const s = totalSeconds % 60;
     return h + ' ชม. ' + m + ' นาที ' + s + ' วินาที';
   }
+  // สำหรับข้อมูลอ้างอิงจริง (ปัดเศษถึงนาทีมาแต่ต้นทาง) — ไม่แสดงวินาทีเพื่อไม่ให้ดูแม่นยำเกินจริง
+  function hoursToHM(hours) {
+    const totalMinutes = Math.round(hours * 60);
+    const h = Math.floor(totalMinutes / 60);
+    const m = totalMinutes % 60;
+    return h + ' ชม. ' + m + ' นาที';
+  }
   const THAI_MONTHS_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const THAI_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   function fmtThaiFull(d){ return d.getDate()+' '+THAI_MONTHS_FULL[d.getMonth()]+' '+(d.getFullYear()+543); }
+
+  // หาแถวข้อมูลอ้างอิงจริง (ขอนแก่น 2569) ที่ตรงกับวัน-เดือนของ trigger date โดยไม่สนปี
+  // เพราะความยาววันคงที่ตามวัน-เดือนในระดับเสี้ยววินาที ไม่ขึ้นกับปี
+  function findReferenceDay(triggerDate){
+    if (typeof REFERENCE_SUN_DATA_2026 === 'undefined' || !REFERENCE_SUN_DATA_2026.days) return null;
+    const mmdd = String(triggerDate.getMonth()+1).padStart(2,'0') + '-' + String(triggerDate.getDate()).padStart(2,'0');
+    return REFERENCE_SUN_DATA_2026.days.find(function(d){ return d.date.slice(5) === mmdd; }) || null;
+  }
 
   // แสดงค่าที่ระบบเข้าใจจริง (parse จาก ISO value ของ input date เสมอ ไม่ขึ้นกับรูปแบบที่จอผู้ใช้แสดง)
   // เพื่อกันผู้ใช้กรอกวัน/เดือนสลับกันโดยไม่รู้ตัว
@@ -265,7 +290,47 @@
     const H = sunsetHourAngle(phi, delta);
     if (H === null) return null;
     const DL = 2*H/15;
-    return { heading: hd, trigger: trigger, N: N, delta: delta, deltaOther: deltaOther, method: method, H: H, DL: DL };
+
+    // คำนวณ DL ทั้งสองสูตรเสมอ (ไม่ขึ้นกับสูตรที่เลือกไว้) สำหรับ 3-way comparison กับข้อมูลจริง
+    const deltaCooper = method === 'cooper' ? delta : deltaOther;
+    const deltaSpencer = method === 'spencer' ? delta : deltaOther;
+    const Hc = sunsetHourAngle(phi, deltaCooper);
+    const Hs = sunsetHourAngle(phi, deltaSpencer);
+    const DLCooper = Hc === null ? null : 2*Hc/15;
+    const DLSpencer = Hs === null ? null : 2*Hs/15;
+
+    return { heading: hd, trigger: trigger, N: N, delta: delta, deltaOther: deltaOther, method: method, H: H, DL: DL, DLCooper: DLCooper, DLSpencer: DLSpencer };
+  }
+
+  // สร้างบล็อกเทียบ 3 ทาง (Cooper vs Spencer vs ข้อมูลจริงขอนแก่น) สำหรับชุดคำนวณหนึ่งชุด
+  function buildCompareHtml(s, phi, withinRefRange){
+    if (!withinRefRange){
+      return '<p class="compare-note">ข้อมูลจริงมีเฉพาะจังหวัดขอนแก่น (ละติจูด ~16.43°N) — พิกัดปัจจุบัน (' + phi + '°) อยู่นอกช่วงนี้ จึงไม่แสดงตัวเลขเปรียบเทียบ</p>';
+    }
+    const refDay = findReferenceDay(s.trigger);
+    if (!refDay || s.DLCooper === null || s.DLSpencer === null){
+      return '<p class="compare-note">ไม่พบข้อมูลอ้างอิงจริงสำหรับวันที่นี้</p>';
+    }
+    const realDL = refDay.dayLengthHours;
+    const avg = (s.DLCooper + s.DLSpencer + realDL) / 3;
+    const errCooperMin = (s.DLCooper - realDL) * 60;
+    const errSpencerMin = (s.DLSpencer - realDL) * 60;
+    const [refM, refD] = refDay.date.slice(5).split('-').map(Number);
+    const refThai = refD + ' ' + THAI_MONTHS_SHORT[refM - 1];
+    const fmtSigned = function(min){ return (min >= 0 ? '+' : '') + min.toFixed(1) + ' นาที'; };
+
+    return '<div class="compare-block">'
+      + '<div class="compare-head">เทียบกับข้อมูลจริง — ขอนแก่น (สมาคมดาราศาสตร์ไทย)</div>'
+      + '<ul class="compare-list">'
+      + '<li><span>Cooper (1969)</span><span>' + hoursToHMS(s.DLCooper) + '</span></li>'
+      + '<li><span>Spencer (1971)</span><span>' + hoursToHMS(s.DLSpencer) + '</span></li>'
+      + '<li><span>ข้อมูลจริง (' + refThai + ')</span><span>' + hoursToHM(realDL) + '</span></li>'
+      + '<li><span>ค่าเฉลี่ยทั้งสาม</span><span>' + hoursToHMS(avg) + '</span></li>'
+      + '<li><span>ผลต่าง Cooper − จริง</span><span>' + fmtSigned(errCooperMin) + '</span></li>'
+      + '<li><span>ผลต่าง Spencer − จริง</span><span>' + fmtSigned(errSpencerMin) + '</span></li>'
+      + '</ul>'
+      + '<p class="compare-note">ข้อมูลจริงจากสมาคมดาราศาสตร์ไทย ปัดเศษถึงนาที (คลาดเคลื่อนได้ ~±2 นาทีจากการปัดเศษ) จึงแสดงเฉพาะระดับนาที ไม่แสดงวินาทีเพื่อไม่ให้ดูแม่นยำเกินจริง</p>'
+      + '</div>';
   }
 
   function calculate(){
@@ -292,6 +357,8 @@
     }
     if (sets.length === 0){ showCalcError('พิกัด/วันที่นี้คำนวณความยาววันปกติไม่ได้'); return; }
 
+    const withinRefRange = Math.abs(phi - 16.4333) <= 0.5;
+
     let html = '';
     sets.forEach((s, i) => {
       const diff = Math.abs(s.delta - s.deltaOther).toFixed(2);
@@ -304,7 +371,9 @@
         + '<li class="step"><span class="name">เทียบ ' + FORMULA_LABEL[otherMethod] + '</span><span class="val">' + s.deltaOther.toFixed(2) + '° (ต่างกัน ' + diff + '°)</span></li>'
         + '<li class="step"><span class="name">H มุมชั่วโมงตก</span><span class="val">' + s.H.toFixed(2) + '°</span></li>'
         + '<li class="step"><span class="name">DL ความยาววัน</span><span class="val">' + hoursToHMS(s.DL) + ' (' + s.DL.toFixed(6) + ' ชม.)</span></li>'
-        + '</ul></div>';
+        + '</ul>'
+        + buildCompareHtml(s, phi, withinRefRange)
+        + '</div>';
     });
     document.getElementById('set-results').innerHTML = html;
 
